@@ -15,8 +15,8 @@ namespace GorillaFriends
         internal static List<string> m_listVerifiedUserIds = new List<string>();
         internal static List<string> m_listCurrentSessionFriends = new List<string>();
         internal static void Log(string msg) => m_hInstance.Logger.LogMessage(msg);
-        public static Color m_clrFriendColor { get; internal set; } = new Color(0.7f, 0.0f, 0.7f, 1.0f);
-        public static Color m_clrVerifiedColor { get; internal set; } = new Color(0.5f, 0.9f, 0.5f, 1.0f);
+        public static Color m_clrFriendColor { get; internal set; } = new Color(0.8f, 0.5f, 0.9f, 1.0f);
+        public static Color m_clrVerifiedColor { get; internal set; } = new Color(0.5f, 1.0f, 0.5f, 1.0f);
         void Awake()
         {
             WebVerified.LoadListOfVerified();
@@ -105,10 +105,11 @@ namespace GorillaFriends
                     {
                         if (Main.IsFriend(__instance.linePlayer.UserId))
                         {
-                            tmp.friendButton.isOn = true;
-                            tmp.friendButton.myText.text = tmp.friendButton.onText;
+                            Main.m_listCurrentSessionFriends.Add(__instance.linePlayer.UserId);
                             __instance.playerName.color = Main.m_clrFriendColor;
                             __instance.playerVRRig.playerText.color = Main.m_clrFriendColor;
+                            tmp.friendButton.isOn = true;
+                            tmp.friendButton.myText.text = tmp.friendButton.onText;
                             tmp.friendButton.UpdateColor();
                         }
                     }
@@ -206,13 +207,7 @@ namespace GorillaFriends
     {
         public static bool Prefix(GorillaPlayerLineButton __instance)
         {
-            if(__instance == Main.m_pScoreboardFriendBtn)
-            {
-                if (!__instance.testPress) return false;
-                __instance.testPress = false;
-                __instance.isOn = !__instance.isOn;
-                return false;
-            }
+            if (__instance == Main.m_pScoreboardFriendBtn) return false;
             return true;
         }
     }
