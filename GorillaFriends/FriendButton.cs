@@ -50,7 +50,7 @@ namespace GorillaFriends
                         parentLine.playerName.color = Main.m_clrFriendColor;
                         parentLine.playerVRRig.playerText.color = Main.m_clrFriendColor;
                         isOn = true;
-                        myText.text = onText;
+                        //myText.text = onText;
                         UpdateColor();
                     }
                 }
@@ -73,13 +73,13 @@ namespace GorillaFriends
                         parentLine.playerName.color = Color.white;
                         parentLine.playerVRRig.playerText.color = Color.white;
                     }
-                    myText.text = offText;
+                    //myText.text = offText;
                 }
                 else
                 {
                     parentLine.playerName.color = Main.m_clrFriendColor;
                     parentLine.playerVRRig.playerText.color = Main.m_clrFriendColor;
-                    myText.text = onText;
+                    //myText.text = onText;
                 }
             }
         }
@@ -100,13 +100,13 @@ namespace GorillaFriends
                 PlayerPrefs.SetInt(parentLine.linePlayer.UserId + "_friend", 1);
                 parentLine.playerName.color = Main.m_clrFriendColor;
                 parentLine.playerVRRig.playerText.color = Main.m_clrFriendColor;
-                myText.text = onText;
+                //myText.text = onText;
                 return;
             }
 
             Main.m_listCurrentSessionFriends.Remove(parentLine.linePlayer.UserId);
             PlayerPrefs.SetInt(parentLine.linePlayer.UserId + "_friend", 0);
-            myText.text = offText;
+            //myText.text = offText;
             if (Main.IsVerified(parentLine.linePlayer.UserId))
             {
                 parentLine.playerName.color = Main.m_clrVerifiedColor;

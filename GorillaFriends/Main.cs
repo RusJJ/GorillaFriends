@@ -3,12 +3,14 @@ using HarmonyLib;
 using Photon.Pun;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GorillaFriends
 {
     [BepInPlugin(ModConstants.ModConstants.modGUID, ModConstants.ModConstants.modName, ModConstants.ModConstants.modVersion)]
     public class Main : BaseUnityPlugin
     {
+        internal static bool m_bScoreboardTweakerMode = false;
         internal static Main m_hInstance = null;
         internal static GameObject m_pScoreboardFriendBtn = null;
         internal static FriendButton m_pFriendButtonController = null;
@@ -22,6 +24,50 @@ namespace GorillaFriends
             WebVerified.LoadListOfVerified();
             m_hInstance = this;
             HarmonyPatcher.Patch.Apply();
+        }
+        void OnScoreboardTweakerStart()
+        {
+            m_bScoreboardTweakerMode = true;
+        }
+        void OnScoreboardTweakerProcessedPre(GameObject scoreboardLinePrefab)
+        {
+            foreach (Transform t in scoreboardLinePrefab.transform)
+            {
+                if (t.name == "Mute Button")
+                {
+                    Main.m_pScoreboardFriendBtn = GameObject.Instantiate(t.gameObject);
+                    if (Main.m_pScoreboardFriendBtn != null) // Who knows...
+                    {
+                        Main.m_pScoreboardFriendBtn.transform.GetChild(0).localScale = new Vector3(0.032f, 0.032f, 1.0f);
+                        Main.m_pScoreboardFriendBtn.transform.GetChild(0).name = "Friend Text";
+                        Main.m_pScoreboardFriendBtn.transform.parent = scoreboardLinePrefab.transform;
+                        Main.m_pScoreboardFriendBtn.transform.name = "FriendButton";
+                        Main.m_pScoreboardFriendBtn.transform.localPosition = new Vector3(18.0f, 0.0f, 0.0f);
+
+                        var controller = Main.m_pScoreboardFriendBtn.GetComponent<GorillaPlayerLineButton>();
+                        if (controller != null)
+                        {
+                            Main.m_pFriendButtonController = Main.m_pScoreboardFriendBtn.AddComponent<FriendButton>();
+                            Main.m_pFriendButtonController.parentLine = controller.parentLine;
+                            Main.m_pFriendButtonController.offText = "ADD\nFRIEND";
+                            Main.m_pFriendButtonController.onText = "FRIEND!";
+                            Main.m_pFriendButtonController.myText = controller.myText;
+                            Main.m_pFriendButtonController.myText.text = Main.m_pFriendButtonController.offText;
+                            Main.m_pFriendButtonController.offMaterial = controller.offMaterial;
+                            Main.m_pFriendButtonController.onMaterial = new Material(controller.offMaterial);
+                            Main.m_pFriendButtonController.onMaterial.color = Main.m_clrFriendColor;
+
+                            GameObject.Destroy(controller);
+                        }
+
+                        Main.m_pScoreboardFriendBtn.transform.localPosition = new Vector3(-67.0f, 0.0f, 0.0f);
+                        Main.m_pScoreboardFriendBtn.transform.localScale = new Vector3(80.0f, t.localScale.y, 0.25f * t.localScale.z);
+                        Main.m_pScoreboardFriendBtn.transform.GetChild(0).GetComponent<Text>().color = Color.clear;
+                        //GameObject.Destroy(Main.m_pScoreboardFriendBtn.transform.GetComponent<MeshRenderer>());
+                    }
+                    return;
+                }
+            }
         }
         public static bool IsVerified(string userId)
         {
@@ -50,9 +96,9 @@ namespace GorillaFriends
     [HarmonyPatch("Awake", MethodType.Normal)]
     internal class GorillaScoreBoardAwake
     {
-        private static void Prefix(GorillaScoreBoard __instance)
+        private static void Postfix(GorillaScoreBoard __instance)
         {
-            if (Main.m_pScoreboardFriendBtn != null) return;
+            if (Main.m_bScoreboardTweakerMode || Main.m_pScoreboardFriendBtn != null) return;
             foreach(Transform t in __instance.scoreBoardLinePrefab.transform)
             {
                 if(t.name == "Mute Button")
