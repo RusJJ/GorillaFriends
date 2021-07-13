@@ -60,10 +60,10 @@ namespace GorillaFriends
                             GameObject.Destroy(controller);
                         }
 
-                        Main.m_pScoreboardFriendBtn.transform.localPosition = new Vector3(-67.0f, 0.0f, 0.0f);
-                        Main.m_pScoreboardFriendBtn.transform.localScale = new Vector3(80.0f, t.localScale.y, 0.25f * t.localScale.z);
+                        Main.m_pScoreboardFriendBtn.transform.localPosition = new Vector3(-74.0f, 0.0f, 0.0f); // Should be -77, but i want more space between Mute and Friend button
+                        Main.m_pScoreboardFriendBtn.transform.localScale = new Vector3(60.0f, t.localScale.y, 0.25f * t.localScale.z);
                         Main.m_pScoreboardFriendBtn.transform.GetChild(0).GetComponent<Text>().color = Color.clear;
-                        //GameObject.Destroy(Main.m_pScoreboardFriendBtn.transform.GetComponent<MeshRenderer>());
+                        GameObject.Destroy(Main.m_pScoreboardFriendBtn.transform.GetComponent<MeshRenderer>());
                     }
                     return;
                 }
@@ -96,7 +96,7 @@ namespace GorillaFriends
     [HarmonyPatch("Awake", MethodType.Normal)]
     internal class GorillaScoreBoardAwake
     {
-        private static void Postfix(GorillaScoreBoard __instance)
+        private static void Prefix(GorillaScoreBoard __instance)
         {
             if (Main.m_bScoreboardTweakerMode || Main.m_pScoreboardFriendBtn != null) return;
             foreach(Transform t in __instance.scoreBoardLinePrefab.transform)
