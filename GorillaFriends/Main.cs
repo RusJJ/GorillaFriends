@@ -21,8 +21,8 @@ namespace GorillaFriends
         public static Color m_clrVerifiedColor { get; internal set; } = new Color(0.5f, 1.0f, 0.5f, 1.0f);
         void Awake()
         {
-            WebVerified.LoadListOfVerified();
             m_hInstance = this;
+            WebVerified.LoadListOfVerified();
             HarmonyPatcher.Patch.Apply();
         }
         void OnScoreboardTweakerStart()

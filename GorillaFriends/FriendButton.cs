@@ -101,7 +101,7 @@ namespace GorillaFriends
             }
 
             Main.m_listCurrentSessionFriends.Remove(parentLine.linePlayer.UserId);
-            PlayerPrefs.SetInt(parentLine.linePlayer.UserId + "_friend", 0);
+            PlayerPrefs.DeleteKey(parentLine.linePlayer.UserId + "_friend");
             if (Main.IsVerified(parentLine.linePlayer.UserId))
             {
                 parentLine.playerName.color = Main.m_clrVerifiedColor;
