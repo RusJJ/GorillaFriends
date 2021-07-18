@@ -11,20 +11,16 @@ namespace GorillaFriends
         public string offText = "";
         public string onText = "";
         public Text myText = null;
-        public float touchTime = 0.0f;
         public Material offMaterial;
         public Material onMaterial;
         private MeshRenderer meshRenderer = null;
         private bool initialized = false;
         private float nextUpdate = 0.0f;
+        private static float nextTouch = 0.0f;
 
         private void Start()
         {
             meshRenderer = gameObject.GetComponent<MeshRenderer>();
-            if (meshRenderer == null)
-            {
-                Main.Log("MeshRenderer is missing?");
-            }
         }
         private void Update()
         {
@@ -82,14 +78,14 @@ namespace GorillaFriends
         }
         private void OnTriggerEnter(Collider collider)
         {
-            if (touchTime > Time.time) return;
-            touchTime = Time.time + 0.25f;
+            if (nextTouch > Time.time) return;
+            nextTouch = Time.time + 0.13f;
             GorillaTriggerColliderHandIndicator component = collider.GetComponent<GorillaTriggerColliderHandIndicator>();
             if (component == null) return;
 
             isOn = !isOn;
             UpdateColor();
-            GorillaTagger.Instance.StartVibration(component.isLeftHand, GorillaTagger.Instance.tapHapticStrength / 2f, GorillaTagger.Instance.tapHapticDuration);
+            GorillaTagger.Instance.StartVibration(component.isLeftHand, GorillaTagger.Instance.tapHapticStrength, GorillaTagger.Instance.tapHapticDuration);
 
             if (isOn)
             {
