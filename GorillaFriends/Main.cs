@@ -1,6 +1,8 @@
 ﻿using BepInEx;
 using HarmonyLib;
 using Photon.Pun;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,15 +12,23 @@ namespace GorillaFriends
     [BepInPlugin(ModConstants.ModConstants.modGUID, ModConstants.ModConstants.modName, ModConstants.ModConstants.modVersion)]
     public class Main : BaseUnityPlugin
     {
+        public enum RecentlyPlayed : byte
+        {
+            None = 0,
+            Before = 1,
+            Now = 2,
+        }
         internal static bool m_bScoreboardTweakerMode = false;
         internal static Main m_hInstance = null;
         internal static GameObject m_pScoreboardFriendBtn = null;
         internal static FriendButton m_pFriendButtonController = null;
         internal static List<string> m_listVerifiedUserIds = new List<string>();
         internal static List<string> m_listCurrentSessionFriends = new List<string>();
+        internal static List<GorillaScoreBoard> m_listScoreboards = new List<GorillaScoreBoard>();
         internal static void Log(string msg) => m_hInstance.Logger.LogMessage(msg);
-        public static Color m_clrFriendColor { get; internal set; } = new Color(0.8f, 0.5f, 0.9f, 1.0f);
-        public static Color m_clrVerifiedColor { get; internal set; } = new Color(0.5f, 1.0f, 0.5f, 1.0f);
+        public static Color m_clrFriend { get; internal set; } = new Color(0.8f, 0.5f, 0.9f, 1.0f);
+        public static Color m_clrVerified { get; internal set; } = new Color(0.5f, 1.0f, 0.5f, 1.0f);
+        public static Color m_clrPlayedRecently { get; internal set; } = new Color(1.0f, 0.67f, 0.67f, 1.0f);
         void Awake()
         {
             m_hInstance = this;
@@ -55,7 +65,7 @@ namespace GorillaFriends
                             Main.m_pFriendButtonController.myText.text = Main.m_pFriendButtonController.offText;
                             Main.m_pFriendButtonController.offMaterial = controller.offMaterial;
                             Main.m_pFriendButtonController.onMaterial = new Material(controller.offMaterial);
-                            Main.m_pFriendButtonController.onMaterial.color = Main.m_clrFriendColor;
+                            Main.m_pFriendButtonController.onMaterial.color = Main.m_clrFriend;
 
                             GameObject.Destroy(controller);
                         }
@@ -89,6 +99,14 @@ namespace GorillaFriends
             }
             return false;
         }
+        public static RecentlyPlayed HasPlayedWithUsRecently(string userId)
+        {
+            long time = long.Parse(PlayerPrefs.GetString(userId + "_played", "0"));
+            long curTime = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
+            if (time == 0) return RecentlyPlayed.None;
+            if (time == curTime) return RecentlyPlayed.Now;
+            return ((time + 259200) > curTime) ? RecentlyPlayed.Before : RecentlyPlayed.None;
+        }
     }
 
 
@@ -98,6 +116,7 @@ namespace GorillaFriends
     {
         private static void Prefix(GorillaScoreBoard __instance)
         {
+            Main.m_listScoreboards.Add(__instance);
             if (Main.m_bScoreboardTweakerMode || Main.m_pScoreboardFriendBtn != null) return;
             foreach(Transform t in __instance.scoreBoardLinePrefab.transform)
             {
@@ -121,7 +140,7 @@ namespace GorillaFriends
                             Main.m_pFriendButtonController.myText.text = Main.m_pFriendButtonController.offText;
                             Main.m_pFriendButtonController.offMaterial = controller.offMaterial;
                             Main.m_pFriendButtonController.onMaterial = new Material(controller.offMaterial);
-                            Main.m_pFriendButtonController.onMaterial.color = Main.m_clrFriendColor;
+                            Main.m_pFriendButtonController.onMaterial.color = Main.m_clrFriend;
 
                             GameObject.Destroy(controller);
                         }
@@ -138,6 +157,8 @@ namespace GorillaFriends
     {
         private static void Prefix()
         {
+            if (!PhotonNetwork.InRoom) return;
+            Main.m_listScoreboards.Clear();
             Main.m_listCurrentSessionFriends.Clear();
         }
     }

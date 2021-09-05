@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace GorillaFriends
@@ -33,8 +34,8 @@ namespace GorillaFriends
                 initialized = true;
                 if (Main.IsVerified(parentLine.linePlayer.UserId))
                 {
-                    parentLine.playerName.color = Main.m_clrVerifiedColor;
-                    parentLine.playerVRRig.playerText.color = Main.m_clrVerifiedColor;
+                    parentLine.playerName.color = Main.m_clrVerified;
+                    parentLine.playerVRRig.playerText.color = Main.m_clrVerified;
                 }
 
                 if (parentLine.linePlayer.IsLocal) gameObject.SetActive(false);
@@ -43,16 +44,31 @@ namespace GorillaFriends
                     if (Main.IsFriend(parentLine.linePlayer.UserId))
                     {
                         if (!Main.IsInFriendList(parentLine.linePlayer.UserId)) Main.m_listCurrentSessionFriends.Add(parentLine.linePlayer.UserId);
-                        parentLine.playerName.color = Main.m_clrFriendColor;
-                        parentLine.playerVRRig.playerText.color = Main.m_clrFriendColor;
+                        parentLine.playerName.color = Main.m_clrFriend;
+                        parentLine.playerVRRig.playerText.color = Main.m_clrFriend;
                         isOn = true;
                         UpdateColor();
+                    }
+                    else
+                    {
+                        var hasPlayedBefore = Main.HasPlayedWithUsRecently(parentLine.linePlayer.UserId);
+                        Main.Log(parentLine.linePlayer.NickName + " has been played: " + hasPlayedBefore.ToString());
+                        if(hasPlayedBefore == Main.RecentlyPlayed.Before)
+                        {
+                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_played", (((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds() + 1).ToString());
+                            parentLine.playerName.color = Main.m_clrPlayedRecently;
+                            parentLine.playerVRRig.playerText.color = Main.m_clrPlayedRecently;
+                        }
+                        else
+                        {
+                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_played", ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds().ToString());
+                        }
                     }
                 }
                 return;
             }
 
-            if (!parentLine.linePlayer.IsLocal && isOn != Main.IsInFriendList(parentLine.linePlayer.UserId))
+            if (parentLine.linePlayer != null && !parentLine.linePlayer.IsLocal && isOn != Main.IsInFriendList(parentLine.linePlayer.UserId))
             {
                 isOn = !isOn;
                 UpdateColor();
@@ -60,8 +76,8 @@ namespace GorillaFriends
                 {
                     if (Main.IsVerified(parentLine.linePlayer.UserId))
                     {
-                        parentLine.playerName.color = Main.m_clrVerifiedColor;
-                        parentLine.playerVRRig.playerText.color = Main.m_clrVerifiedColor;
+                        parentLine.playerName.color = Main.m_clrVerified;
+                        parentLine.playerVRRig.playerText.color = Main.m_clrVerified;
                     }
                     else
                     {
@@ -71,15 +87,15 @@ namespace GorillaFriends
                 }
                 else
                 {
-                    parentLine.playerName.color = Main.m_clrFriendColor;
-                    parentLine.playerVRRig.playerText.color = Main.m_clrFriendColor;
+                    parentLine.playerName.color = Main.m_clrFriend;
+                    parentLine.playerVRRig.playerText.color = Main.m_clrFriend;
                 }
             }
         }
         private void OnTriggerEnter(Collider collider)
         {
             if (nextTouch > Time.time) return;
-            nextTouch = Time.time + 0.13f;
+            nextTouch = Time.time + 0.25f;
             GorillaTriggerColliderHandIndicator component = collider.GetComponent<GorillaTriggerColliderHandIndicator>();
             if (component == null) return;
 
@@ -91,8 +107,8 @@ namespace GorillaFriends
             {
                 Main.m_listCurrentSessionFriends.Add(parentLine.linePlayer.UserId);
                 PlayerPrefs.SetInt(parentLine.linePlayer.UserId + "_friend", 1);
-                parentLine.playerName.color = Main.m_clrFriendColor;
-                parentLine.playerVRRig.playerText.color = Main.m_clrFriendColor;
+                parentLine.playerName.color = Main.m_clrFriend;
+                parentLine.playerVRRig.playerText.color = Main.m_clrFriend;
                 return;
             }
 
@@ -100,8 +116,8 @@ namespace GorillaFriends
             PlayerPrefs.DeleteKey(parentLine.linePlayer.UserId + "_friend");
             if (Main.IsVerified(parentLine.linePlayer.UserId))
             {
-                parentLine.playerName.color = Main.m_clrVerifiedColor;
-                parentLine.playerVRRig.playerText.color = Main.m_clrVerifiedColor;
+                parentLine.playerName.color = Main.m_clrVerified;
+                parentLine.playerVRRig.playerText.color = Main.m_clrVerified;
             }
             else
             {
