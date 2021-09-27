@@ -19,6 +19,8 @@ namespace GorillaFriends
         private float nextUpdate = 0.0f;
         private static float nextTouch = 0.0f;
 
+        public const byte moreTimeIfWeLagging = 5;
+
         private void Start()
         {
             meshRenderer = gameObject.GetComponent<MeshRenderer>();
@@ -36,6 +38,7 @@ namespace GorillaFriends
                 {
                     parentLine.playerName.color = Main.m_clrVerified;
                     parentLine.playerVRRig.playerText.color = Main.m_clrVerified;
+                    if (parentLine.linePlayer.IsLocal) GorillaTagger.Instance.offlineVRRig.playerText.color = Main.m_clrVerified;
                 }
 
                 if (parentLine.linePlayer.IsLocal) gameObject.SetActive(false);
@@ -52,10 +55,12 @@ namespace GorillaFriends
                     else
                     {
                         var hasPlayedBefore = Main.HasPlayedWithUsRecently(parentLine.linePlayer.UserId);
+                        if (!Main.NeedToCheckRecently(parentLine.linePlayer.UserId)) Main.m_listCurrentSessionRecentlyChecked.Add(parentLine.linePlayer.UserId);
+
                         Main.Log(parentLine.linePlayer.NickName + " has been played: " + hasPlayedBefore.ToString());
                         if(hasPlayedBefore == Main.RecentlyPlayed.Before)
                         {
-                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_played", (((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds() + 1).ToString());
+                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_played", (((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds() + moreTimeIfWeLagging).ToString());
                             parentLine.playerName.color = Main.m_clrPlayedRecently;
                             parentLine.playerVRRig.playerText.color = Main.m_clrPlayedRecently;
                         }
@@ -109,7 +114,8 @@ namespace GorillaFriends
                 PlayerPrefs.SetInt(parentLine.linePlayer.UserId + "_friend", 1);
                 parentLine.playerName.color = Main.m_clrFriend;
                 parentLine.playerVRRig.playerText.color = Main.m_clrFriend;
-                return;
+                goto ENDING; /* GT 1.1.0 */
+                //return;
             }
 
             Main.m_listCurrentSessionFriends.Remove(parentLine.linePlayer.UserId);
@@ -124,6 +130,19 @@ namespace GorillaFriends
                 parentLine.playerName.color = Color.white;
                 parentLine.playerVRRig.playerText.color = Color.white;
             }
+
+            /* GT 1.1.0 */
+          ENDING:
+            if(!Main.m_bScoreboardTweakerMode)
+            {
+                Main.Log("Initiating Scoreboard Redraw...");
+                foreach (var sb in Main.m_listScoreboards)
+                {
+                    Main.Log("Redrawing...");
+                    sb.RedrawPlayerLines();
+                }
+            }
+            /* GT 1.1.0 */
         }
         public void UpdateColor()
         {

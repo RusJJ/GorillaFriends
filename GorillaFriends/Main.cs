@@ -24,6 +24,7 @@ namespace GorillaFriends
         internal static FriendButton m_pFriendButtonController = null;
         internal static List<string> m_listVerifiedUserIds = new List<string>();
         internal static List<string> m_listCurrentSessionFriends = new List<string>();
+        internal static List<string> m_listCurrentSessionRecentlyChecked = new List<string>();
         internal static List<GorillaScoreBoard> m_listScoreboards = new List<GorillaScoreBoard>();
         internal static void Log(string msg) => m_hInstance.Logger.LogMessage(msg);
         public static Color m_clrFriend { get; internal set; } = new Color(0.8f, 0.5f, 0.9f, 1.0f);
@@ -99,16 +100,77 @@ namespace GorillaFriends
             }
             return false;
         }
+        public static bool NeedToCheckRecently(string userId)
+        {
+            foreach (string s in m_listCurrentSessionRecentlyChecked)
+            {
+                if (s == userId) return false;
+            }
+            return true;
+        }
         public static RecentlyPlayed HasPlayedWithUsRecently(string userId)
         {
             long time = long.Parse(PlayerPrefs.GetString(userId + "_played", "0"));
             long curTime = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
             if (time == 0) return RecentlyPlayed.None;
-            if (time == curTime) return RecentlyPlayed.Now;
+            if (time > curTime - FriendButton.moreTimeIfWeLagging && time <= curTime) return RecentlyPlayed.Now;
             return ((time + 259200) > curTime) ? RecentlyPlayed.Before : RecentlyPlayed.None;
         }
     }
 
+    /* GT 1.1.0 */
+    [HarmonyPatch(typeof(GorillaScoreBoard))]
+    [HarmonyPatch("RedrawPlayerLines", MethodType.Normal)]
+    internal class GorillaScoreBoardRedrawPlayerLines
+    {
+        private static bool Prefix(GorillaScoreBoard __instance)
+        {
+            if (Main.m_bScoreboardTweakerMode) return true;
+
+            __instance.lines.Sort((Comparison<GorillaPlayerScoreboardLine>)((line1, line2) => line1.playerActorNumber.CompareTo(line2.playerActorNumber)));
+            __instance.boardText.text = __instance.GetBeginningString();
+            __instance.buttonText.text = "";
+            for (int index = 0; index < __instance.lines.Count; ++index)
+            {
+                __instance.lines[index].gameObject.GetComponent<RectTransform>().localPosition = new Vector3(0.0f, (float)(__instance.startingYValue - __instance.lineHeight * index), 0.0f);
+                Text boardText = __instance.boardText;
+                var usrid = __instance.lines[index].linePlayer.UserId;
+                var txtusr = __instance.lines[index].playerVRRig.playerText;
+                if (Main.IsInFriendList(usrid))
+                {
+                    boardText.text = boardText.text + "\n <color=#cd80e6>" + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
+                    txtusr.color = Main.m_clrFriend;
+                }
+                else if (Main.IsVerified(usrid))
+                {
+                    boardText.text = boardText.text + "\n <color=#80ff80>" + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
+                    txtusr.color = Main.m_clrVerified;
+                    if(__instance.lines[index].linePlayer.IsLocal) GorillaTagger.Instance.offlineVRRig.playerText.color = Main.m_clrVerified;
+                }
+                else if (!Main.NeedToCheckRecently(usrid) && Main.HasPlayedWithUsRecently(usrid) == Main.RecentlyPlayed.Before)
+                {
+                    boardText.text = boardText.text + "\n <color=#ffabab>" + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
+                    txtusr.color = Main.m_clrPlayedRecently;
+                }
+                else
+                {
+                    boardText.text = boardText.text + "\n " + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName);
+                    txtusr.color = Color.white;
+                }
+                if (__instance.lines[index].linePlayer != PhotonNetwork.LocalPlayer)
+                {
+                    if (__instance.lines[index].reportButton.isActiveAndEnabled)
+                        __instance.buttonText.text += "FRIEND       MUTE                      REPORT\n";
+                    else
+                        __instance.buttonText.text += "FRIEND       MUTE      HATE SPEECH    TOXICITY      CHEATING      CANCEL\n";
+                }
+                else
+                    __instance.buttonText.text += "\n";
+            }
+            return false;
+        }
+    }
+    /* GT 1.1.0 */
 
     [HarmonyPatch(typeof(GorillaScoreBoard))]
     [HarmonyPatch("Awake", MethodType.Normal)]
@@ -117,21 +179,32 @@ namespace GorillaFriends
         private static void Prefix(GorillaScoreBoard __instance)
         {
             Main.m_listScoreboards.Add(__instance);
+            __instance.boardText.supportRichText = true;
+            var ppTmp = __instance.buttonText.transform.localPosition;
+            __instance.buttonText.transform.localPosition = new Vector3(
+                ppTmp.x - 3.0f,
+                ppTmp.y,
+                ppTmp.z
+            );
             if (Main.m_bScoreboardTweakerMode || Main.m_pScoreboardFriendBtn != null) return;
-            foreach(Transform t in __instance.scoreBoardLinePrefab.transform)
+
+            foreach (Transform t in __instance.scoreBoardLinePrefab.transform)
             {
-                if(t.name == "Mute Button")
+                if (t.name == "Mute Button")
                 {
+                    Main.Log("Instanciating MuteBtn...");
                     Main.m_pScoreboardFriendBtn = GameObject.Instantiate(t.gameObject);
                     if (Main.m_pScoreboardFriendBtn != null) // Who knows...
                     {
-                        t.localPosition = new Vector3(3.8f, 0.0f, 0.0f); // Move MuteButton a bit to left
+                        Main.Log("Setting FriendBtn...");
+                        t.localPosition = new Vector3(17.5f, 0.0f, 0.0f); // Move MuteButton a bit to right
                         Main.m_pScoreboardFriendBtn.transform.parent = __instance.scoreBoardLinePrefab.transform;
                         Main.m_pScoreboardFriendBtn.transform.name = "FriendButton";
-                        Main.m_pScoreboardFriendBtn.transform.localPosition = new Vector3(17.5f, 0.0f, 0.0f);
+                        Main.m_pScoreboardFriendBtn.transform.localPosition = new Vector3(3.8f, 0.0f, 0.0f);
                         var controller = Main.m_pScoreboardFriendBtn.GetComponent<GorillaPlayerLineButton>();
                         if (controller != null)
                         {
+                            Main.Log("Replacing controller...");
                             Main.m_pFriendButtonController = Main.m_pScoreboardFriendBtn.AddComponent<FriendButton>();
                             Main.m_pFriendButtonController.parentLine = controller.parentLine;
                             Main.m_pFriendButtonController.offText = "ADD\nFRIEND";
@@ -160,6 +233,7 @@ namespace GorillaFriends
             if (!PhotonNetwork.InRoom) return;
             Main.m_listScoreboards.Clear();
             Main.m_listCurrentSessionFriends.Clear();
+            Main.m_listCurrentSessionRecentlyChecked.Clear(); // Im too lazy to do a lil cleanup on our victims disconnect...
         }
     }
 }
