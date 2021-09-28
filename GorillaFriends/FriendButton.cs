@@ -19,8 +19,6 @@ namespace GorillaFriends
         private float nextUpdate = 0.0f;
         private static float nextTouch = 0.0f;
 
-        public const byte moreTimeIfWeLagging = 5;
-
         private void Start()
         {
             meshRenderer = gameObject.GetComponent<MeshRenderer>();
@@ -57,10 +55,10 @@ namespace GorillaFriends
                         var hasPlayedBefore = Main.HasPlayedWithUsRecently(parentLine.linePlayer.UserId);
                         if (!Main.NeedToCheckRecently(parentLine.linePlayer.UserId)) Main.m_listCurrentSessionRecentlyChecked.Add(parentLine.linePlayer.UserId);
 
-                        Main.Log(parentLine.linePlayer.NickName + " has been played: " + hasPlayedBefore.ToString());
+                        //Main.Log(parentLine.linePlayer.NickName + " has been played: " + hasPlayedBefore.ToString());
                         if(hasPlayedBefore == Main.RecentlyPlayed.Before)
                         {
-                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_played", (((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds() + moreTimeIfWeLagging).ToString());
+                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_played", (((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds() + Main.moreTimeIfWeLagging).ToString());
                             parentLine.playerName.color = Main.m_clrPlayedRecently;
                             parentLine.playerVRRig.playerText.color = Main.m_clrPlayedRecently;
                         }
@@ -135,10 +133,10 @@ namespace GorillaFriends
           ENDING:
             if(!Main.m_bScoreboardTweakerMode)
             {
-                Main.Log("Initiating Scoreboard Redraw...");
+                //Main.Log("Initiating Scoreboard Redraw...");
                 foreach (var sb in Main.m_listScoreboards)
                 {
-                    Main.Log("Redrawing...");
+                    //Main.Log("Redrawing...");
                     sb.RedrawPlayerLines();
                 }
             }

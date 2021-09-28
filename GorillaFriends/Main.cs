@@ -1,9 +1,11 @@
 ﻿using BepInEx;
+using BepInEx.Configuration;
 using HarmonyLib;
 using Photon.Pun;
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -28,13 +30,36 @@ namespace GorillaFriends
         internal static List<GorillaScoreBoard> m_listScoreboards = new List<GorillaScoreBoard>();
         internal static void Log(string msg) => m_hInstance.Logger.LogMessage(msg);
         public static Color m_clrFriend { get; internal set; } = new Color(0.8f, 0.5f, 0.9f, 1.0f);
+        internal static string s_clrFriend;
         public static Color m_clrVerified { get; internal set; } = new Color(0.5f, 1.0f, 0.5f, 1.0f);
+        internal static string s_clrVerified;
         public static Color m_clrPlayedRecently { get; internal set; } = new Color(1.0f, 0.67f, 0.67f, 1.0f);
+        internal static string s_clrPlayedRecently;
+        // This is a little settings for us
+        // In case our game froze for a second or more
+        internal static byte moreTimeIfWeLagging = 5;
+        internal static int howMuchSecondsIsRecently = 259200;
         void Awake()
         {
             m_hInstance = this;
             WebVerified.LoadListOfVerified();
             HarmonyPatcher.Patch.Apply();
+
+            var cfg = new ConfigFile(Path.Combine(Paths.ConfigPath, "GorillaFriends.cfg"), true);
+            moreTimeIfWeLagging = cfg.Bind("Timings", "MoreTimeOnLag", (byte)5, "This is a little settings for us in case our game froze for a second or more").Value;
+            howMuchSecondsIsRecently = cfg.Bind("Timings", "RecentlySeconds", 259200, "How much is \"recently\"?").Value;
+            if (howMuchSecondsIsRecently < moreTimeIfWeLagging) howMuchSecondsIsRecently = moreTimeIfWeLagging;
+            m_clrPlayedRecently = cfg.Bind("Colors", "RecentlyPlayedWith", m_clrPlayedRecently, "Color of \"Recently played with ...\"").Value;
+            m_clrFriend = cfg.Bind("Colors", "Friend", m_clrFriend, "Color of FRIEND!").Value;
+
+            byte[] clrizer = { (byte)(m_clrFriend.r * 255), (byte)(m_clrFriend.g * 255), (byte)(m_clrFriend.b * 255) };
+            s_clrFriend = ByteArrayToHexCode(clrizer);
+
+            clrizer[0] = (byte)(m_clrVerified.r * 255); clrizer[1] = (byte)(m_clrVerified.g * 255); clrizer[2] = (byte)(m_clrVerified.b * 255);
+            s_clrVerified = ByteArrayToHexCode(clrizer);
+
+            clrizer[0] = (byte)(m_clrPlayedRecently.r * 255); clrizer[1] = (byte)(m_clrPlayedRecently.g * 255); clrizer[2] = (byte)(m_clrPlayedRecently.b * 255);
+            s_clrPlayedRecently = ByteArrayToHexCode(clrizer);
         }
         void OnScoreboardTweakerStart()
         {
@@ -80,6 +105,13 @@ namespace GorillaFriends
                 }
             }
         }
+        public static string ByteArrayToHexCode(byte[] arr)
+        {
+            StringBuilder hex = new StringBuilder(arr.Length * 2);
+            foreach (byte b in arr)
+                hex.AppendFormat("{0:X2}", b);
+            return hex.ToString();
+        }
         public static bool IsVerified(string userId)
         {
             foreach(string s in m_listVerifiedUserIds)
@@ -113,8 +145,8 @@ namespace GorillaFriends
             long time = long.Parse(PlayerPrefs.GetString(userId + "_played", "0"));
             long curTime = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
             if (time == 0) return RecentlyPlayed.None;
-            if (time > curTime - FriendButton.moreTimeIfWeLagging && time <= curTime) return RecentlyPlayed.Now;
-            return ((time + 259200) > curTime) ? RecentlyPlayed.Before : RecentlyPlayed.None;
+            if (time > curTime - moreTimeIfWeLagging && time <= curTime) return RecentlyPlayed.Now;
+            return ((time + howMuchSecondsIsRecently) > curTime) ? RecentlyPlayed.Before : RecentlyPlayed.None;
         }
     }
 
@@ -138,18 +170,18 @@ namespace GorillaFriends
                 var txtusr = __instance.lines[index].playerVRRig.playerText;
                 if (Main.IsInFriendList(usrid))
                 {
-                    boardText.text = boardText.text + "\n <color=#cd80e6>" + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
+                    boardText.text = boardText.text + "\n <color=#" + Main.s_clrFriend + ">" + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
                     txtusr.color = Main.m_clrFriend;
                 }
                 else if (Main.IsVerified(usrid))
                 {
-                    boardText.text = boardText.text + "\n <color=#80ff80>" + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
+                    boardText.text = boardText.text + "\n <color=#" + Main.s_clrVerified + ">" + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
                     txtusr.color = Main.m_clrVerified;
                     if(__instance.lines[index].linePlayer.IsLocal) GorillaTagger.Instance.offlineVRRig.playerText.color = Main.m_clrVerified;
                 }
                 else if (!Main.NeedToCheckRecently(usrid) && Main.HasPlayedWithUsRecently(usrid) == Main.RecentlyPlayed.Before)
                 {
-                    boardText.text = boardText.text + "\n <color=#ffabab>" + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
+                    boardText.text = boardText.text + "\n <color=#" + Main.s_clrPlayedRecently + ">" + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
                     txtusr.color = Main.m_clrPlayedRecently;
                 }
                 else
