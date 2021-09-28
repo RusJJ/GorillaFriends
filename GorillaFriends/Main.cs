@@ -179,13 +179,17 @@ namespace GorillaFriends
         private static void Prefix(GorillaScoreBoard __instance)
         {
             Main.m_listScoreboards.Add(__instance);
+
             __instance.boardText.supportRichText = true;
             var ppTmp = __instance.buttonText.transform.localPosition;
+            var sd = __instance.buttonText.rectTransform.sizeDelta;
             __instance.buttonText.transform.localPosition = new Vector3(
                 ppTmp.x - 3.0f,
                 ppTmp.y,
                 ppTmp.z
             );
+            __instance.buttonText.rectTransform.sizeDelta = new Vector2(sd.x + 4.0f, sd.y);
+
             if (Main.m_bScoreboardTweakerMode || Main.m_pScoreboardFriendBtn != null) return;
 
             foreach (Transform t in __instance.scoreBoardLinePrefab.transform)
