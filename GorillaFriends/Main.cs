@@ -53,13 +53,13 @@ namespace GorillaFriends
             m_clrFriend = cfg.Bind("Colors", "Friend", m_clrFriend, "Color of FRIEND!").Value;
 
             byte[] clrizer = { (byte)(m_clrFriend.r * 255), (byte)(m_clrFriend.g * 255), (byte)(m_clrFriend.b * 255) };
-            s_clrFriend = ByteArrayToHexCode(clrizer);
+            s_clrFriend = "\n <color=#" + ByteArrayToHexCode(clrizer) + ">";
 
             clrizer[0] = (byte)(m_clrVerified.r * 255); clrizer[1] = (byte)(m_clrVerified.g * 255); clrizer[2] = (byte)(m_clrVerified.b * 255);
-            s_clrVerified = ByteArrayToHexCode(clrizer);
+            s_clrVerified = "\n <color=#" + ByteArrayToHexCode(clrizer) + ">";
 
             clrizer[0] = (byte)(m_clrPlayedRecently.r * 255); clrizer[1] = (byte)(m_clrPlayedRecently.g * 255); clrizer[2] = (byte)(m_clrPlayedRecently.b * 255);
-            s_clrPlayedRecently = ByteArrayToHexCode(clrizer);
+            s_clrPlayedRecently = "\n <color=#" + ByteArrayToHexCode(clrizer) + ">";
         }
         void OnScoreboardTweakerStart()
         {
@@ -170,18 +170,18 @@ namespace GorillaFriends
                 var txtusr = __instance.lines[index].playerVRRig.playerText;
                 if (Main.IsInFriendList(usrid))
                 {
-                    boardText.text = boardText.text + "\n <color=#" + Main.s_clrFriend + ">" + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
+                    boardText.text = boardText.text + Main.s_clrFriend + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
                     txtusr.color = Main.m_clrFriend;
                 }
                 else if (Main.IsVerified(usrid))
                 {
-                    boardText.text = boardText.text + "\n <color=#" + Main.s_clrVerified + ">" + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
+                    boardText.text = boardText.text + Main.s_clrVerified + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
                     txtusr.color = Main.m_clrVerified;
                     if(__instance.lines[index].linePlayer.IsLocal) GorillaTagger.Instance.offlineVRRig.playerText.color = Main.m_clrVerified;
                 }
                 else if (!Main.NeedToCheckRecently(usrid) && Main.HasPlayedWithUsRecently(usrid) == Main.RecentlyPlayed.Before)
                 {
-                    boardText.text = boardText.text + "\n <color=#" + Main.s_clrPlayedRecently + ">" + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
+                    boardText.text = boardText.text + Main.s_clrPlayedRecently + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
                     txtusr.color = Main.m_clrPlayedRecently;
                 }
                 else
