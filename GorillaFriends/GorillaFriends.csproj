@@ -37,9 +37,4 @@
       <HintPath>..\Libs\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
-
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="set FOLDER=D:\Steam\steamapps\common\Gorilla Tag\BepInEx\plugins\GorillaFriends&#xD;&#xA;&#xD;&#xA;if not exist &quot;%25FOLDER%25&quot; mkdir &quot;%25FOLDER%25&quot;&#xD;&#xA;copy &quot;$(TargetPath)&quot; &quot;%25FOLDER%25\GorillaFriends.dll&quot;" />
-  </Target>
-
 </Project>

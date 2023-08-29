@@ -27,7 +27,7 @@ namespace HarmonyPatcher
         {
             if (m_hMyInstance != null)
             {
-                m_hMyInstance.UnpatchAll(ModConstants.ModConstants.modGUID);
+                m_hMyInstance.UnpatchSelf();
             }
             m_bIsPatched = false;
         }
