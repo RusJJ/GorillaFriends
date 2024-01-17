@@ -224,9 +224,8 @@ namespace GorillaFriends
     }
     /* GT 1.1.69+ */
 
-    // We are not supporting ScoreboardTweaks for now. Because it`s not updated.
-    //[HarmonyPatch(typeof(GorillaScoreBoard))]
-    //[HarmonyPatch("Awake", MethodType.Normal)]
+    [HarmonyPatch(typeof(GorillaScoreBoard))]
+    [HarmonyPatch("Awake", MethodType.Normal)]
     internal class GorillaScoreBoardAwake
     {
         private static void Prefix(GorillaScoreBoard __instance)
