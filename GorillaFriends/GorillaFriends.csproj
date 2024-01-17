@@ -2,10 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Authors>RusJJ</Authors>
     <PackageId>GorillaFriends</PackageId>
     <Product>GorillaFriends</Product>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <RepositoryUrl>https://github.com/RusJJ/GorillaFriends</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/RusJJ/GorillaFriends</PackageProjectUrl>
+    <Copyright>RusJJ</Copyright>
+    <PackageLicenseExpression>MIT License</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

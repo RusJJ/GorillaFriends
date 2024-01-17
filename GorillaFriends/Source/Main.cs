@@ -281,8 +281,8 @@ namespace GorillaFriends
         }
     }
 
-    [HarmonyPatch(typeof(PhotonNetwork))]
-    [HarmonyPatch("Disconnect", MethodType.Normal)]
+    [HarmonyPatch(typeof(GorillaNetworking.PhotonNetworkController))]
+    [HarmonyPatch("AttemptDisconnect", MethodType.Normal)]
     internal class OnRoomDisconnected
     {
         private static void Prefix()
