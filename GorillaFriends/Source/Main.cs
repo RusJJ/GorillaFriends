@@ -14,9 +14,9 @@ namespace GorillaFriends
     [BepInPlugin(ModConstants.ModConstants.modGUID, ModConstants.ModConstants.modName, ModConstants.ModConstants.modVersion)]
     public class Main : BaseUnityPlugin
     {
-        public enum RecentlyPlayed : byte
+        public enum eRecentlyPlayed : byte
         {
-            None = 0,
+            Never = 0,
             Before = 1,
             Now = 2,
         }
@@ -140,13 +140,13 @@ namespace GorillaFriends
             }
             return true;
         }
-        public static RecentlyPlayed HasPlayedWithUsRecently(string userId)
+        public static eRecentlyPlayed HasPlayedWithUsRecently(string userId)
         {
             long time = long.Parse(PlayerPrefs.GetString(userId + "_played", "0"));
             long curTime = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
-            if (time == 0) return RecentlyPlayed.None;
-            if (time > curTime - moreTimeIfWeLagging && time <= curTime) return RecentlyPlayed.Now;
-            return ((time + howMuchSecondsIsRecently) > curTime) ? RecentlyPlayed.Before : RecentlyPlayed.None;
+            if (time == 0) return eRecentlyPlayed.Never;
+            if (time > curTime - moreTimeIfWeLagging && time <= curTime) return eRecentlyPlayed.Now;
+            return ((time + howMuchSecondsIsRecently) > curTime) ? eRecentlyPlayed.Before : eRecentlyPlayed.Never;
         }
     }
 
@@ -179,7 +179,7 @@ namespace GorillaFriends
                     txtusr.color = Main.m_clrVerified;
                     if(__instance.lines[index].linePlayer.IsLocal) GorillaTagger.Instance.offlineVRRig.playerText.color = Main.m_clrVerified;
                 }
-                else if (!Main.NeedToCheckRecently(usrid) && Main.HasPlayedWithUsRecently(usrid) == Main.RecentlyPlayed.Before)
+                else if (!Main.NeedToCheckRecently(usrid) && Main.HasPlayedWithUsRecently(usrid) == Main.eRecentlyPlayed.Before)
                 {
                     boardText.text = boardText.text + Main.s_clrPlayedRecently + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
                     txtusr.color = Main.m_clrPlayedRecently;

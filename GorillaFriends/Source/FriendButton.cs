@@ -55,8 +55,7 @@ namespace GorillaFriends
                         var hasPlayedBefore = Main.HasPlayedWithUsRecently(parentLine.linePlayer.UserId);
                         if (!Main.NeedToCheckRecently(parentLine.linePlayer.UserId)) Main.m_listCurrentSessionRecentlyChecked.Add(parentLine.linePlayer.UserId);
 
-                        //Main.Log(parentLine.linePlayer.NickName + " has been played: " + hasPlayedBefore.ToString());
-                        if(hasPlayedBefore == Main.RecentlyPlayed.Before)
+                        if(hasPlayedBefore == Main.eRecentlyPlayed.Before)
                         {
                             PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_played", (((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds() + Main.moreTimeIfWeLagging).ToString());
                             parentLine.playerName.color = Main.m_clrPlayedRecently;
