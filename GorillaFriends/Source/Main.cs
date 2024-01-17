@@ -35,10 +35,10 @@ namespace GorillaFriends
         internal static string s_clrVerified;
         public static Color m_clrPlayedRecently { get; internal set; } = new Color(1.0f, 0.67f, 0.67f, 1.0f);
         internal static string s_clrPlayedRecently;
-        // This is a little settings for us
-        // In case our game froze for a second or more
-        internal static byte moreTimeIfWeLagging = 5;
-        internal static int howMuchSecondsIsRecently = 259200;
+
+        // These are little settings for us
+        internal static byte moreTimeIfWeLagging = 5; // In case our game froze for a second or more
+        internal static int howMuchSecondsIsRecently = 259200; // Just a time, equal to 3 days
         void Awake()
         {
             m_hInstance = this;
@@ -150,7 +150,7 @@ namespace GorillaFriends
         }
     }
 
-    /* GT 1.1.0 */
+    /* GT 1.1.69+ */
     [HarmonyPatch(typeof(GorillaScoreBoard))]
     [HarmonyPatch("RedrawPlayerLines", MethodType.Normal)]
     internal class GorillaScoreBoardRedrawPlayerLines
@@ -159,60 +159,81 @@ namespace GorillaFriends
         {
             if (Main.m_bScoreboardTweakerMode) return true;
 
-            __instance.lines.Sort((Comparison<GorillaPlayerScoreboardLine>)((line1, line2) => line1.playerActorNumber.CompareTo(line2.playerActorNumber)));
+            //__instance.lines.Sort((Comparison<GorillaPlayerScoreboardLine>)((line1, line2) => line1.playerActorNumber.CompareTo(line2.playerActorNumber))); // leftover from GTag 1.1.0?
             __instance.boardText.text = __instance.GetBeginningString();
             __instance.buttonText.text = "";
-            for (int index = 0; index < __instance.lines.Count; ++index)
+            for (int i = 0; i < __instance.lines.Count; ++i)
             {
-                __instance.lines[index].gameObject.GetComponent<RectTransform>().localPosition = new Vector3(0.0f, (float)(__instance.startingYValue - __instance.lineHeight * index), 0.0f);
-                Text boardText = __instance.boardText;
-                var usrid = __instance.lines[index].linePlayer.UserId;
-                var txtusr = __instance.lines[index].playerVRRig.playerText;
-                if (Main.IsInFriendList(usrid))
+                try
                 {
-                    boardText.text = boardText.text + Main.s_clrFriend + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
-                    txtusr.color = Main.m_clrFriend;
+                    if (__instance.lines[i].gameObject.activeInHierarchy)
+                    {
+                        __instance.lines[i].gameObject.GetComponent<RectTransform>().localPosition = new Vector3(0f, (float)(__instance.startingYValue - __instance.lineHeight * i), 0f);
+                        if (__instance.lines[i].linePlayer != null)
+                        {
+                            var usrid = __instance.lines[i].linePlayer.UserId;
+                            var txtusr = __instance.lines[i].playerVRRig.playerText;
+
+                            Text boardText = __instance.boardText;
+                            if (Main.IsInFriendList(usrid))
+                            {
+                                boardText.text += Main.s_clrFriend + __instance.NormalizeName(true, __instance.lines[i].linePlayer.NickName) + "</color>";
+                                txtusr.color = Main.m_clrFriend;
+                            }
+                            else if (Main.IsVerified(usrid))
+                            {
+                                boardText.text += Main.s_clrVerified + __instance.NormalizeName(true, __instance.lines[i].linePlayer.NickName) + "</color>";
+                                txtusr.color = Main.m_clrVerified;
+                                if (__instance.lines[i].linePlayer.IsLocal) GorillaTagger.Instance.offlineVRRig.playerText.color = Main.m_clrVerified;
+                            }
+                            else if (!Main.NeedToCheckRecently(usrid) && Main.HasPlayedWithUsRecently(usrid) == Main.eRecentlyPlayed.Before)
+                            {
+                                boardText.text += Main.s_clrPlayedRecently + __instance.NormalizeName(true, __instance.lines[i].linePlayer.NickName) + "</color>";
+                                txtusr.color = Main.m_clrPlayedRecently;
+                            }
+                            else
+                            {
+                                boardText.text += "\n " + __instance.NormalizeName(true, __instance.lines[i].linePlayer.NickName);
+                                txtusr.color = Color.white;
+                            }
+                            if (__instance.lines[i].linePlayer != PhotonNetwork.LocalPlayer)
+                            {
+                                if (__instance.lines[i].reportButton.isActiveAndEnabled)
+                                {
+                                    __instance.buttonText.text += "FRIEND       MUTE                      REPORT\n";
+                                }
+                                else
+                                {
+                                    __instance.buttonText.text += "FRIEND       MUTE      HATE SPEECH    TOXICITY      CHEATING      CANCEL\n";
+                                }
+                            }
+                            else
+                            {
+                                __instance.buttonText.text += "\n";
+                            }
+                        }
+                    }
                 }
-                else if (Main.IsVerified(usrid))
+                catch
                 {
-                    boardText.text = boardText.text + Main.s_clrVerified + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
-                    txtusr.color = Main.m_clrVerified;
-                    if(__instance.lines[index].linePlayer.IsLocal) GorillaTagger.Instance.offlineVRRig.playerText.color = Main.m_clrVerified;
+                    // Error message supposed to be here?!
                 }
-                else if (!Main.NeedToCheckRecently(usrid) && Main.HasPlayedWithUsRecently(usrid) == Main.eRecentlyPlayed.Before)
-                {
-                    boardText.text = boardText.text + Main.s_clrPlayedRecently + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName) + "</color>";
-                    txtusr.color = Main.m_clrPlayedRecently;
-                }
-                else
-                {
-                    boardText.text = boardText.text + "\n " + __instance.NormalizeName(true, __instance.lines[index].linePlayer.NickName);
-                    txtusr.color = Color.white;
-                }
-                if (__instance.lines[index].linePlayer != PhotonNetwork.LocalPlayer)
-                {
-                    if (__instance.lines[index].reportButton.isActiveAndEnabled)
-                        __instance.buttonText.text += "FRIEND       MUTE                      REPORT\n";
-                    else
-                        __instance.buttonText.text += "FRIEND       MUTE      HATE SPEECH    TOXICITY      CHEATING      CANCEL\n";
-                }
-                else
-                    __instance.buttonText.text += "\n";
             }
             return false;
         }
     }
-    /* GT 1.1.0 */
+    /* GT 1.1.69+ */
 
-    [HarmonyPatch(typeof(GorillaScoreBoard))]
-    [HarmonyPatch("Awake", MethodType.Normal)]
+    // We are not supporting ScoreboardTweaks for now. Because it`s not updated.
+    //[HarmonyPatch(typeof(GorillaScoreBoard))]
+    //[HarmonyPatch("Awake", MethodType.Normal)]
     internal class GorillaScoreBoardAwake
     {
         private static void Prefix(GorillaScoreBoard __instance)
         {
             Main.m_listScoreboards.Add(__instance);
-
             __instance.boardText.supportRichText = true;
+
             var ppTmp = __instance.buttonText.transform.localPosition;
             var sd = __instance.buttonText.rectTransform.sizeDelta;
             __instance.buttonText.transform.localPosition = new Vector3(
@@ -266,10 +287,19 @@ namespace GorillaFriends
     {
         private static void Prefix()
         {
-            if (!PhotonNetwork.InRoom) return;
-            Main.m_listScoreboards.Clear();
-            Main.m_listCurrentSessionFriends.Clear();
-            Main.m_listCurrentSessionRecentlyChecked.Clear(); // Im too lazy to do a lil cleanup on our victims disconnect...
+            try
+            {
+                if (!PhotonNetwork.InRoom) return;
+                Main.m_listScoreboards.Clear();
+                Main.m_listCurrentSessionFriends.Clear();
+                Main.m_listCurrentSessionRecentlyChecked.Clear(); // Im too lazy to do a lil cleanup on our victims disconnect...
+            }
+            catch
+            {
+                // Who knows what's gonna happen, lol?
+                // Should be safe but lets be honest -
+                //   we dont wanna ruin someone's experience because of us!
+            }
         }
     }
 }
