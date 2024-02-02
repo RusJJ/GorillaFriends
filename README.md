@@ -1,6 +1,3 @@
-# The project is kinda unfrozen but...
-Sadly my headset is still broken and new has not yet arrived.
-
 # What is this mod?
 GorillaFriends is a mod that shows your FRIENDS! And verified players.
 
