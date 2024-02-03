@@ -5,6 +5,7 @@ using Photon.Pun;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -142,7 +143,7 @@ namespace GorillaFriends
         }
         public static eRecentlyPlayed HasPlayedWithUsRecently(string userId)
         {
-            long time = long.Parse(PlayerPrefs.GetString(userId + "_played", "0"));
+            long time = long.Parse(PlayerPrefs.GetString(userId + "_pd", "0"));
             long curTime = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
             if (time == 0) return eRecentlyPlayed.Never;
             if (time > curTime - moreTimeIfWeLagging && time <= curTime) return eRecentlyPlayed.Now;
@@ -159,7 +160,6 @@ namespace GorillaFriends
         {
             if (Main.m_bScoreboardTweakerMode) return true;
 
-            //__instance.lines.Sort((Comparison<GorillaPlayerScoreboardLine>)((line1, line2) => line1.playerActorNumber.CompareTo(line2.playerActorNumber))); // leftover from GTag 1.1.0?
             __instance.boardText.text = __instance.GetBeginningString();
             __instance.buttonText.text = "";
             for (int i = 0; i < __instance.lines.Count; ++i)
@@ -222,60 +222,87 @@ namespace GorillaFriends
             return false;
         }
     }
+    [HarmonyPatch(typeof(GorillaPlayerScoreboardLine))]
+    [HarmonyPatch("InitializeLine", MethodType.Normal)]
+    internal class GorillaScoreBoardLineUpdate
+    {
+        private static void Prefix(GorillaPlayerScoreboardLine __instance)
+        {
+            foreach (Component component in __instance.GetComponentsInChildren<FriendButton>(true))
+            {
+                component.gameObject.SetActive(__instance.linePlayer != PhotonNetwork.LocalPlayer);
+                break;
+            }
+        }
+    }
     /* GT 1.1.69+ */
 
     [HarmonyPatch(typeof(GorillaScoreBoard))]
-    [HarmonyPatch("Awake", MethodType.Normal)]
-    internal class GorillaScoreBoardAwake
+    [HarmonyPatch("Start", MethodType.Normal)]
+    internal class GorillaScoreBoardStart
     {
         private static void Prefix(GorillaScoreBoard __instance)
         {
-            Main.m_listScoreboards.Add(__instance);
-            __instance.boardText.supportRichText = true;
-
-            var ppTmp = __instance.buttonText.transform.localPosition;
-            var sd = __instance.buttonText.rectTransform.sizeDelta;
-            __instance.buttonText.transform.localPosition = new Vector3(
-                ppTmp.x - 3.0f,
-                ppTmp.y,
-                ppTmp.z
-            );
-            __instance.buttonText.rectTransform.sizeDelta = new Vector2(sd.x + 4.0f, sd.y);
-
-            if (Main.m_bScoreboardTweakerMode || Main.m_pScoreboardFriendBtn != null) return;
-
-            foreach (Transform t in __instance.scoreBoardLinePrefab.transform)
+            Main.Log("Processing a scoreboard...");
+            if (!Main.m_listScoreboards.Contains(__instance))
             {
-                if (t.name == "Mute Button")
-                {
-                    Main.Log("Instanciating MuteBtn...");
-                    Main.m_pScoreboardFriendBtn = GameObject.Instantiate(t.gameObject);
-                    if (Main.m_pScoreboardFriendBtn != null) // Who knows...
-                    {
-                        Main.Log("Setting FriendBtn...");
-                        t.localPosition = new Vector3(17.5f, 0.0f, 0.0f); // Move MuteButton a bit to right
-                        Main.m_pScoreboardFriendBtn.transform.parent = __instance.scoreBoardLinePrefab.transform;
-                        Main.m_pScoreboardFriendBtn.transform.name = "FriendButton";
-                        Main.m_pScoreboardFriendBtn.transform.localPosition = new Vector3(3.8f, 0.0f, 0.0f);
-                        var controller = Main.m_pScoreboardFriendBtn.GetComponent<GorillaPlayerLineButton>();
-                        if (controller != null)
-                        {
-                            Main.Log("Replacing controller...");
-                            Main.m_pFriendButtonController = Main.m_pScoreboardFriendBtn.AddComponent<FriendButton>();
-                            Main.m_pFriendButtonController.parentLine = controller.parentLine;
-                            Main.m_pFriendButtonController.offText = "ADD\nFRIEND";
-                            Main.m_pFriendButtonController.onText = "FRIEND!";
-                            Main.m_pFriendButtonController.myText = controller.myText;
-                            Main.m_pFriendButtonController.myText.text = Main.m_pFriendButtonController.offText;
-                            Main.m_pFriendButtonController.offMaterial = controller.offMaterial;
-                            Main.m_pFriendButtonController.onMaterial = new Material(controller.offMaterial);
-                            Main.m_pFriendButtonController.onMaterial.color = Main.m_clrFriend;
+                Main.m_listScoreboards.Add(__instance);
+                __instance.boardText.supportRichText = true;
 
-                            GameObject.Destroy(controller);
+                var ppTmp = __instance.buttonText.transform.localPosition;
+                var sd = __instance.buttonText.rectTransform.sizeDelta;
+                __instance.buttonText.transform.localPosition = new Vector3(
+                    ppTmp.x - 3.0f,
+                    ppTmp.y,
+                    ppTmp.z
+                );
+                __instance.buttonText.rectTransform.sizeDelta = new Vector2(sd.x + 4.0f, sd.y);
+
+                // For the new Gorilla Tag versions
+                if (Main.m_bScoreboardTweakerMode) return;
+
+                int linesCount = __instance.lines.Count();
+                Main.Log("Got a scoreboard with " + linesCount + " lines!");
+                for (int i = 0; i < linesCount; ++i)
+                {
+                    foreach (Transform t in __instance.lines[i].transform)
+                    {
+                        if (t.name == "Mute Button")
+                        {
+                            Main.Log("FriendButtoning a line number " + i);
+                            GameObject myFriendButton = GameObject.Instantiate(t.gameObject);
+                            if (myFriendButton != null) // Who knows...
+                            {
+                                t.localPosition = new Vector3(17.5f, 0.0f, 0.0f); // Move MuteButton a bit to the right
+                                myFriendButton.transform.parent = __instance.lines[i].transform;
+                                myFriendButton.transform.name = "FriendButton";
+                                myFriendButton.transform.localPosition = new Vector3(3.8f, 0.0f, 0.0f);
+                                myFriendButton.transform.localScale = t.localScale;
+                                myFriendButton.transform.rotation = t.rotation;
+                                var controller = myFriendButton.GetComponent<GorillaPlayerLineButton>();
+                                if (controller != null) // magic
+                                {
+                                    FriendButton myFriendController = myFriendButton.AddComponent<FriendButton>();
+                                    myFriendController.parentLine = controller.parentLine;
+                                    myFriendController.offText = "ADD\nFRIEND";
+                                    myFriendController.onText = "FRIEND!";
+                                    myFriendController.myText = controller.myText;
+                                    myFriendController.myText.text = myFriendController.offText;
+                                    myFriendController.offMaterial = controller.offMaterial;
+                                    myFriendController.onMaterial = new Material(controller.offMaterial);
+                                    myFriendController.onMaterial.color = Main.m_clrFriend;
+
+                                    GameObject.Destroy(controller); // We are not muting friends!!!
+                                }
+                            }
+                            break;
                         }
                     }
-                    return;
                 }
+            }
+            else
+            {
+                Main.Log("Already processed. Skipping.");
             }
         }
     }

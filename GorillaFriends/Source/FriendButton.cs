@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Photon.Pun;
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -57,13 +58,13 @@ namespace GorillaFriends
 
                         if(hasPlayedBefore == Main.eRecentlyPlayed.Before)
                         {
-                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_played", (((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds() + Main.moreTimeIfWeLagging).ToString());
+                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_pd", (((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds() + Main.moreTimeIfWeLagging).ToString());
                             parentLine.playerName.color = Main.m_clrPlayedRecently;
                             parentLine.playerVRRig.playerText.color = Main.m_clrPlayedRecently;
                         }
                         else
                         {
-                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_played", ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds().ToString());
+                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_pd", ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds().ToString());
                         }
                     }
                 }
@@ -97,16 +98,22 @@ namespace GorillaFriends
         private void OnTriggerEnter(Collider collider)
         {
             if (nextTouch > Time.time) return;
-            nextTouch = Time.time + 0.25f;
             GorillaTriggerColliderHandIndicator component = collider.GetComponent<GorillaTriggerColliderHandIndicator>();
             if (component == null) return;
 
+            nextTouch = Time.time + 0.25f;
             isOn = !isOn;
             UpdateColor();
-            GorillaTagger.Instance.StartVibration(component.isLeftHand, GorillaTagger.Instance.tapHapticStrength, GorillaTagger.Instance.tapHapticDuration);
+
+            GorillaTagger.Instance.StartVibration(component.isLeftHand, GorillaTagger.Instance.tapHapticStrength / 2f, GorillaTagger.Instance.tapHapticDuration);
+            GorillaTagger.Instance.offlineVRRig.PlayHandTapLocal(67, component.isLeftHand, 0.05f);
+            if(PhotonNetwork.InRoom && GorillaTagger.Instance.myVRRig != null)
+            {
+                GorillaTagger.Instance.myVRRig.RPC("PlayHandTap", RpcTarget.Others, (object)67, (object)component.isLeftHand, (object)0.05f);
+            }
 
             if (isOn)
-            {
+            {           
                 Main.m_listCurrentSessionFriends.Add(parentLine.linePlayer.UserId);
                 PlayerPrefs.SetInt(parentLine.linePlayer.UserId + "_friend", 1);
                 parentLine.playerName.color = Main.m_clrFriend;
