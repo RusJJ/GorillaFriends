@@ -18,6 +18,7 @@ namespace GorillaFriends
                     Main.m_listVerifiedUserIds.Add(line);
                 }
             }
+            client.Dispose();
         }
     }
 }
