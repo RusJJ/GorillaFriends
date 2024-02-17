@@ -321,6 +321,7 @@ namespace GorillaFriends
         {
             try
             {
+                FriendButton.lobbyId++;
                 if (!PhotonNetwork.InRoom) return;
                 Main.m_listScoreboards.Clear();
                 Main.m_listCurrentSessionFriends.Clear();

@@ -16,9 +16,11 @@ namespace GorillaFriends
         public Material offMaterial;
         public Material onMaterial;
         private MeshRenderer meshRenderer = null;
-        private bool initialized = false;
+        private int initialisedForLobby = -1;
         private float nextUpdate = 0.0f;
+
         private static float nextTouch = 0.0f;
+        public static int lobbyId = 0;
 
         private void Start()
         {
@@ -29,10 +31,10 @@ namespace GorillaFriends
             if (nextUpdate > Time.time || parentLine.playerVRRig == null || parentLine.linePlayer == null) return;
             nextUpdate = Time.time + 0.5f;
 
-            /* First Initialization? */
-            if (!initialized)
+            /* Initialising for this lobby */
+            if (initialisedForLobby != lobbyId)
             {
-                initialized = true;
+                initialisedForLobby = lobbyId;
                 if (Main.IsVerified(parentLine.linePlayer.UserId))
                 {
                     parentLine.playerName.color = Main.m_clrVerified;
