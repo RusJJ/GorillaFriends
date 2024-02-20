@@ -2,6 +2,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using static GorillaFriends.Main;
 
 namespace GorillaFriends
 {
@@ -20,7 +21,7 @@ namespace GorillaFriends
         private float nextUpdate = 0.0f;
 
         private static float nextTouch = 0.0f;
-        public static int lobbyId = 0;
+        public static int lobbyId = 1;
 
         private void Start()
         {
@@ -30,48 +31,6 @@ namespace GorillaFriends
         {
             if (nextUpdate > Time.time || parentLine.playerVRRig == null || parentLine.linePlayer == null) return;
             nextUpdate = Time.time + 0.5f;
-
-            /* Initialising for this lobby */
-            if (initialisedForLobby != lobbyId)
-            {
-                initialisedForLobby = lobbyId;
-                if (Main.IsVerified(parentLine.linePlayer.UserId))
-                {
-                    parentLine.playerName.color = Main.m_clrVerified;
-                    parentLine.playerVRRig.playerText.color = Main.m_clrVerified;
-                    if (parentLine.linePlayer.IsLocal) GorillaTagger.Instance.offlineVRRig.playerText.color = Main.m_clrVerified;
-                }
-
-                if (parentLine.linePlayer.IsLocal) gameObject.SetActive(false);
-                else
-                {
-                    if (Main.IsFriend(parentLine.linePlayer.UserId))
-                    {
-                        if (!Main.IsInFriendList(parentLine.linePlayer.UserId)) Main.m_listCurrentSessionFriends.Add(parentLine.linePlayer.UserId);
-                        parentLine.playerName.color = Main.m_clrFriend;
-                        parentLine.playerVRRig.playerText.color = Main.m_clrFriend;
-                        isOn = true;
-                        UpdateColor();
-                    }
-                    else
-                    {
-                        var hasPlayedBefore = Main.HasPlayedWithUsRecently(parentLine.linePlayer.UserId);
-                        if (!Main.NeedToCheckRecently(parentLine.linePlayer.UserId)) Main.m_listCurrentSessionRecentlyChecked.Add(parentLine.linePlayer.UserId);
-
-                        if(hasPlayedBefore == Main.eRecentlyPlayed.Before)
-                        {
-                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_pd", (((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds() + Main.moreTimeIfWeLagging).ToString());
-                            parentLine.playerName.color = Main.m_clrPlayedRecently;
-                            parentLine.playerVRRig.playerText.color = Main.m_clrPlayedRecently;
-                        }
-                        else
-                        {
-                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_pd", ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds().ToString());
-                        }
-                    }
-                }
-                return;
-            }
 
             if (parentLine.linePlayer != null && !parentLine.linePlayer.IsLocal && isOn != Main.IsInFriendList(parentLine.linePlayer.UserId))
             {
@@ -95,6 +54,59 @@ namespace GorillaFriends
                     parentLine.playerName.color = Main.m_clrFriend;
                     parentLine.playerVRRig.playerText.color = Main.m_clrFriend;
                 }
+            }
+        }
+        public void InitializeWithLine()
+        {
+            /* Initialising for this lobby */
+            //if (initialisedForLobby != lobbyId)
+            {
+                //initialisedForLobby = lobbyId;
+                if (Main.IsVerified(parentLine.linePlayer.UserId))
+                {
+                    parentLine.playerName.color = Main.m_clrVerified;
+                    parentLine.playerVRRig.playerText.color = Main.m_clrVerified;
+                    if (parentLine.linePlayer.IsLocal) GorillaTagger.Instance.offlineVRRig.playerText.color = Main.m_clrVerified;
+                }
+                else if (parentLine.linePlayer.IsLocal)
+                {
+                    parentLine.playerName.color = Color.white;
+                    parentLine.playerVRRig.playerText.color = Color.white;
+                    GorillaTagger.Instance.offlineVRRig.playerText.color = Color.white;
+                }
+
+                if (parentLine.linePlayer.IsLocal) gameObject.SetActive(false);
+                else
+                {
+                    if (Main.IsFriend(parentLine.linePlayer.UserId))
+                    {
+                        if (!Main.IsInFriendList(parentLine.linePlayer.UserId)) Main.m_listCurrentSessionFriends.Add(parentLine.linePlayer.UserId);
+                        parentLine.playerName.color = Main.m_clrFriend;
+                        parentLine.playerVRRig.playerText.color = Main.m_clrFriend;
+
+                        isOn = true;
+                        UpdateColor();
+                    }
+                    else
+                    {
+                        eRecentlyPlayed hasPlayedBefore = Main.HasPlayedWithUsRecently(parentLine.linePlayer.UserId);
+                        if (!Main.NeedToCheckRecently(parentLine.linePlayer.UserId)) Main.m_listCurrentSessionRecentlyChecked.Add(parentLine.linePlayer.UserId);
+
+                        if (hasPlayedBefore == Main.eRecentlyPlayed.Before)
+                        {
+                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_pd", (((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds() + Main.moreTimeIfWeLagging).ToString());
+                            parentLine.playerName.color = Main.m_clrPlayedRecently;
+                            parentLine.playerVRRig.playerText.color = Main.m_clrPlayedRecently;
+                        }
+                        else
+                        {
+                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_pd", ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds().ToString());
+                            parentLine.playerName.color = Color.white;
+                            parentLine.playerVRRig.playerText.color = Color.white;
+                        }
+                    }
+                }
+                return;
             }
         }
         private void OnTriggerEnter(Collider collider)

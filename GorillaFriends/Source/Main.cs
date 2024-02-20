@@ -235,10 +235,19 @@ namespace GorillaFriends
     {
         private static void Prefix(GorillaPlayerScoreboardLine __instance)
         {
-            foreach (Component component in __instance.GetComponentsInChildren<FriendButton>(true))
+            try
             {
-                component.gameObject.SetActive(__instance.linePlayer != PhotonNetwork.LocalPlayer);
-                break;
+                FriendButton friendButton = __instance.GetComponent<FriendButton>();
+                friendButton?.InitializeWithLine();
+                foreach (Component component in __instance.GetComponentsInChildren<FriendButton>(true))
+                {
+                    component.gameObject.SetActive(__instance.linePlayer != PhotonNetwork.LocalPlayer);
+                    break;
+                }
+            }
+            catch
+            {
+
             }
         }
     }
@@ -250,65 +259,73 @@ namespace GorillaFriends
     {
         private static void Prefix(GorillaScoreBoard __instance)
         {
-            Main.Log("Processing a scoreboard...");
-            if (!Main.m_listScoreboards.Contains(__instance))
+            try
             {
-                Main.m_listScoreboards.Add(__instance);
-                __instance.boardText.supportRichText = true;
 
-                var ppTmp = __instance.buttonText.transform.localPosition;
-                var sd = __instance.buttonText.rectTransform.sizeDelta;
-                __instance.buttonText.transform.localPosition = new Vector3(
-                    ppTmp.x - 3.0f,
-                    ppTmp.y,
-                    ppTmp.z
-                );
-                __instance.buttonText.rectTransform.sizeDelta = new Vector2(sd.x + 4.0f, sd.y);
-
-                // For the new Gorilla Tag versions
-                if (Main.m_bScoreboardTweakerMode) return;
-
-                int linesCount = __instance.lines.Count();
-                Main.Log("Got a scoreboard with " + linesCount + " lines!");
-                for (int i = 0; i < linesCount; ++i)
+                Main.Log("Processing a scoreboard...");
+                if (!Main.m_listScoreboards.Contains(__instance))
                 {
-                    foreach (Transform t in __instance.lines[i].transform)
-                    {
-                        if (t.name == "Mute Button")
-                        {
-                            GameObject myFriendButton = GameObject.Instantiate(t.gameObject);
-                            if (myFriendButton != null) // Who knows...
-                            {
-                                t.localPosition = new Vector3(17.5f, 0.0f, 0.0f); // Move MuteButton a bit to the right
-                                myFriendButton.transform.parent = __instance.lines[i].transform;
-                                myFriendButton.transform.name = "FriendButton";
-                                myFriendButton.transform.localPosition = new Vector3(3.8f, 0.0f, 0.0f);
-                                myFriendButton.transform.localScale = t.localScale;
-                                myFriendButton.transform.rotation = t.rotation;
-                                var controller = myFriendButton.GetComponent<GorillaPlayerLineButton>();
-                                if (controller != null) // magic
-                                {
-                                    FriendButton myFriendController = myFriendButton.AddComponent<FriendButton>();
-                                    myFriendController.parentLine = controller.parentLine;
-                                    myFriendController.offText = "ADD\nFRIEND";
-                                    myFriendController.onText = "FRIEND!";
-                                    myFriendController.myText = controller.myText;
-                                    myFriendController.myText.text = myFriendController.offText;
-                                    myFriendController.offMaterial = controller.offMaterial;
-                                    myFriendController.onMaterial = new Material(controller.offMaterial);
-                                    myFriendController.onMaterial.color = Main.m_clrFriend;
+                    Main.m_listScoreboards.Add(__instance);
+                    __instance.boardText.supportRichText = true;
 
-                                    GameObject.Destroy(controller); // We are not muting friends!!!
+                    var ppTmp = __instance.buttonText.transform.localPosition;
+                    var sd = __instance.buttonText.rectTransform.sizeDelta;
+                    __instance.buttonText.transform.localPosition = new Vector3(
+                        ppTmp.x - 3.0f,
+                        ppTmp.y,
+                        ppTmp.z
+                    );
+                    __instance.buttonText.rectTransform.sizeDelta = new Vector2(sd.x + 4.0f, sd.y);
+
+                    // For the new Gorilla Tag versions
+                    if (Main.m_bScoreboardTweakerMode) return;
+
+                    int linesCount = __instance.lines.Count();
+                    Main.Log("Got a scoreboard with " + linesCount + " lines!");
+                    for (int i = 0; i < linesCount; ++i)
+                    {
+                        foreach (Transform t in __instance.lines[i].transform)
+                        {
+                            if (t.name == "Mute Button")
+                            {
+                                GameObject myFriendButton = GameObject.Instantiate(t.gameObject);
+                                if (myFriendButton != null) // Who knows...
+                                {
+                                    t.localPosition = new Vector3(17.5f, 0.0f, 0.0f); // Move MuteButton a bit to the right
+                                    myFriendButton.transform.parent = __instance.lines[i].transform;
+                                    myFriendButton.transform.name = "FriendButton";
+                                    myFriendButton.transform.localPosition = new Vector3(3.8f, 0.0f, 0.0f);
+                                    myFriendButton.transform.localScale = t.localScale;
+                                    myFriendButton.transform.rotation = t.rotation;
+                                    var controller = myFriendButton.GetComponent<GorillaPlayerLineButton>();
+                                    if (controller != null) // magic
+                                    {
+                                        FriendButton myFriendController = myFriendButton.AddComponent<FriendButton>();
+                                        myFriendController.parentLine = controller.parentLine;
+                                        myFriendController.offText = "ADD\nFRIEND";
+                                        myFriendController.onText = "FRIEND!";
+                                        myFriendController.myText = controller.myText;
+                                        myFriendController.myText.text = myFriendController.offText;
+                                        myFriendController.offMaterial = controller.offMaterial;
+                                        myFriendController.onMaterial = new Material(controller.offMaterial);
+                                        myFriendController.onMaterial.color = Main.m_clrFriend;
+
+                                        GameObject.Destroy(controller); // We are not muting friends!!!
+                                    }
                                 }
+                                break; // next line
                             }
-                            break; // next line
                         }
                     }
                 }
+                else
+                {
+                    Main.Log("Already processed. Skipping.");
+                }
             }
-            else
+            catch
             {
-                Main.Log("Already processed. Skipping.");
+
             }
         }
     }
