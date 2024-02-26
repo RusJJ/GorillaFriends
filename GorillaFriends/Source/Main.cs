@@ -165,7 +165,10 @@ namespace GorillaFriends
     {
         private static bool Prefix(GorillaScoreBoard __instance)
         {
-            if (Main.m_bScoreboardTweakerMode) return true;
+            if (Main.m_bScoreboardTweakerMode)
+            {
+                return true;
+            }
 
             __instance.boardText.text = __instance.GetBeginningString();
             __instance.buttonText.text = "";
@@ -231,6 +234,28 @@ namespace GorillaFriends
     }
     [HarmonyPatch(typeof(GorillaPlayerScoreboardLine))]
     [HarmonyPatch("InitializeLine", MethodType.Normal)]
+    internal class GorillaScoreBoardLineInit
+    {
+        private static void Prefix(GorillaPlayerScoreboardLine __instance)
+        {
+            try
+            {
+                //FriendButton friendButton = __instance.GetComponent<FriendButton>();
+                //friendButton?.InitializeWithLine();
+                foreach (Component component in __instance.GetComponentsInChildren<FriendButton>(true))
+                {
+                    component.gameObject.SetActive(__instance.linePlayer != PhotonNetwork.LocalPlayer);
+                    break;
+                }
+            }
+            catch
+            {
+
+            }
+        }
+    }
+    [HarmonyPatch(typeof(GorillaPlayerScoreboardLine))]
+    [HarmonyPatch("UpdateLine", MethodType.Normal)]
     internal class GorillaScoreBoardLineUpdate
     {
         private static void Prefix(GorillaPlayerScoreboardLine __instance)
@@ -239,11 +264,6 @@ namespace GorillaFriends
             {
                 FriendButton friendButton = __instance.GetComponent<FriendButton>();
                 friendButton?.InitializeWithLine();
-                foreach (Component component in __instance.GetComponentsInChildren<FriendButton>(true))
-                {
-                    component.gameObject.SetActive(__instance.linePlayer != PhotonNetwork.LocalPlayer);
-                    break;
-                }
             }
             catch
             {
@@ -261,7 +281,6 @@ namespace GorillaFriends
         {
             try
             {
-
                 Main.Log("Processing a scoreboard...");
                 if (!Main.m_listScoreboards.Contains(__instance))
                 {
@@ -322,6 +341,7 @@ namespace GorillaFriends
                 {
                     Main.Log("Already processed. Skipping.");
                 }
+                __instance.RedrawPlayerLines(); // Check
             }
             catch
             {

@@ -29,16 +29,19 @@ namespace GorillaFriends
         }
         private void Update()
         {
-            if (nextUpdate > Time.time || parentLine.playerVRRig == null || parentLine.linePlayer == null) return;
+            Photon.Realtime.Player playa = parentLine.linePlayer;
+            if (nextUpdate > Time.time || parentLine.playerVRRig == null || playa == null) return;
             nextUpdate = Time.time + 0.5f;
 
-            if (parentLine.linePlayer != null && !parentLine.linePlayer.IsLocal && isOn != Main.IsInFriendList(parentLine.linePlayer.UserId))
+            InitializeWithLine();
+
+            if (playa != null && !playa.IsLocal && isOn != Main.IsInFriendList(playa.UserId))
             {
                 isOn = !isOn;
                 UpdateColor();
                 if (!isOn)
                 {
-                    if (Main.IsVerified(parentLine.linePlayer.UserId))
+                    if (Main.IsVerified(playa.UserId))
                     {
                         parentLine.playerName.color = Main.m_clrVerified;
                         parentLine.playerVRRig.playerText.color = Main.m_clrVerified;
@@ -61,8 +64,9 @@ namespace GorillaFriends
             /* Initialising for this lobby */
             //if (initialisedForLobby != lobbyId)
             {
-                //initialisedForLobby = lobbyId;
-                if (Main.IsVerified(parentLine.linePlayer.UserId))
+                initialisedForLobby = lobbyId;
+                string userId = parentLine.linePlayer.UserId;
+                if (Main.IsVerified(userId))
                 {
                     parentLine.playerName.color = Main.m_clrVerified;
                     parentLine.playerVRRig.playerText.color = Main.m_clrVerified;
@@ -78,9 +82,9 @@ namespace GorillaFriends
                 if (parentLine.linePlayer.IsLocal) gameObject.SetActive(false);
                 else
                 {
-                    if (Main.IsFriend(parentLine.linePlayer.UserId))
+                    if (Main.IsFriend(userId))
                     {
-                        if (!Main.IsInFriendList(parentLine.linePlayer.UserId)) Main.m_listCurrentSessionFriends.Add(parentLine.linePlayer.UserId);
+                        if (!Main.IsInFriendList(userId)) Main.m_listCurrentSessionFriends.Add(userId);
                         parentLine.playerName.color = Main.m_clrFriend;
                         parentLine.playerVRRig.playerText.color = Main.m_clrFriend;
 
@@ -89,18 +93,18 @@ namespace GorillaFriends
                     }
                     else
                     {
-                        eRecentlyPlayed hasPlayedBefore = Main.HasPlayedWithUsRecently(parentLine.linePlayer.UserId);
-                        if (!Main.NeedToCheckRecently(parentLine.linePlayer.UserId)) Main.m_listCurrentSessionRecentlyChecked.Add(parentLine.linePlayer.UserId);
+                        eRecentlyPlayed hasPlayedBefore = Main.HasPlayedWithUsRecently(userId);
+                        if (!Main.NeedToCheckRecently(userId)) Main.m_listCurrentSessionRecentlyChecked.Add(userId);
 
                         if (hasPlayedBefore == Main.eRecentlyPlayed.Before)
                         {
-                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_pd", (((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds() + Main.moreTimeIfWeLagging).ToString());
+                            PlayerPrefs.SetString(userId + "_pd", (((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds() + Main.moreTimeIfWeLagging).ToString());
                             parentLine.playerName.color = Main.m_clrPlayedRecently;
                             parentLine.playerVRRig.playerText.color = Main.m_clrPlayedRecently;
                         }
                         else
                         {
-                            PlayerPrefs.SetString(parentLine.linePlayer.UserId + "_pd", ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds().ToString());
+                            PlayerPrefs.SetString(userId + "_pd", ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds().ToString());
                             parentLine.playerName.color = Color.white;
                             parentLine.playerVRRig.playerText.color = Color.white;
                         }
