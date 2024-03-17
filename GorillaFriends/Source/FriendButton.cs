@@ -29,7 +29,7 @@ namespace GorillaFriends
         }
         private void Update()
         {
-            Photon.Realtime.Player playa = parentLine.linePlayer;
+            NetPlayer playa = parentLine.linePlayer;
             if (nextUpdate > Time.time || parentLine.playerVRRig == null || playa == null) return;
             nextUpdate = Time.time + 0.5f;
 

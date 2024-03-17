@@ -206,7 +206,7 @@ namespace GorillaFriends
                                 boardText.text += "\n " + __instance.NormalizeName(true, __instance.lines[i].linePlayer.NickName);
                                 txtusr.color = Color.white;
                             }
-                            if (__instance.lines[i].linePlayer != PhotonNetwork.LocalPlayer)
+                            if (__instance.lines[i].linePlayer.IsLocal != true)
                             {
                                 if (__instance.lines[i].reportButton.isActiveAndEnabled)
                                 {
@@ -244,7 +244,7 @@ namespace GorillaFriends
                 //friendButton?.InitializeWithLine();
                 foreach (Component component in __instance.GetComponentsInChildren<FriendButton>(true))
                 {
-                    component.gameObject.SetActive(__instance.linePlayer != PhotonNetwork.LocalPlayer);
+                    component.gameObject.SetActive(__instance.linePlayer.IsLocal != true);
                     break;
                 }
             }
