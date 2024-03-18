@@ -183,9 +183,10 @@ namespace GorillaFriends
                         {
                             var usrid = __instance.lines[i].linePlayer.UserId;
                             var txtusr = __instance.lines[i].playerVRRig.playerText;
+                            bool isLocalPlaya = __instance.lines[i].linePlayer.IsLocal;
 
                             Text boardText = __instance.boardText;
-                            if (Main.IsInFriendList(usrid))
+                            if (!isLocalPlaya && Main.IsInFriendList(usrid))
                             {
                                 boardText.text += Main.s_clrFriend + __instance.NormalizeName(true, __instance.lines[i].linePlayer.NickName) + "</color>";
                                 txtusr.color = Main.m_clrFriend;
@@ -196,7 +197,7 @@ namespace GorillaFriends
                                 txtusr.color = Main.m_clrVerified;
                                 if (__instance.lines[i].linePlayer.IsLocal) GorillaTagger.Instance.offlineVRRig.playerText.color = Main.m_clrVerified;
                             }
-                            else if (!Main.NeedToCheckRecently(usrid) && Main.HasPlayedWithUsRecently(usrid) == Main.eRecentlyPlayed.Before)
+                            else if (!isLocalPlaya && !Main.NeedToCheckRecently(usrid) && Main.HasPlayedWithUsRecently(usrid) == Main.eRecentlyPlayed.Before)
                             {
                                 boardText.text += Main.s_clrPlayedRecently + __instance.NormalizeName(true, __instance.lines[i].linePlayer.NickName) + "</color>";
                                 txtusr.color = Main.m_clrPlayedRecently;
@@ -206,7 +207,7 @@ namespace GorillaFriends
                                 boardText.text += "\n " + __instance.NormalizeName(true, __instance.lines[i].linePlayer.NickName);
                                 txtusr.color = Color.white;
                             }
-                            if (__instance.lines[i].linePlayer.IsLocal != true)
+                            if (isLocalPlaya != true)
                             {
                                 if (__instance.lines[i].reportButton.isActiveAndEnabled)
                                 {
@@ -332,7 +333,7 @@ namespace GorillaFriends
                                         GameObject.Destroy(controller); // We are not muting friends!!!
                                     }
                                 }
-                                break; // next line
+                                break; // next line (breaking foreach, continuing for)
                             }
                         }
                     }
@@ -351,14 +352,13 @@ namespace GorillaFriends
     }
 
     [HarmonyPatch(typeof(GorillaNetworking.PhotonNetworkController))]
-    [HarmonyPatch("AttemptDisconnect", MethodType.Normal)]
+    [HarmonyPatch("OnDisconnected", MethodType.Normal)]
     internal class OnRoomDisconnected
     {
         private static void Prefix()
         {
             try
             {
-                FriendButton.lobbyId++;
                 if (!PhotonNetwork.InRoom) return;
                 Main.m_listScoreboards.Clear();
                 Main.m_listCurrentSessionFriends.Clear();
